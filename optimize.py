@@ -1,31 +1,14 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import numpy as np
+
 import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
-import pandas_datareader.data as web
 from dateutil.relativedelta import relativedelta
-import matplotlib.pyplot as plt
-import matplotlib
+import pandas_datareader.data as web
+
+# Import the backtrader platform
 import backtrader as bt
-
-matplotlib.use('TkAgg')
-
-
-class BuyAndHold(bt.Strategy):
-    def start(self):
-        self.val_start = self.broker.get_cash()  # keep the starting cash
-
-    def nextstart(self):
-        # Buy all the available cash
-        size = int(self.broker.get_cash() / self.data)
-        self.buy(size=size)
-
-    def stop(self):
-        # calculate the actual returns
-        self.roi = (self.broker.get_value() / self.val_start) - 1.0
-        print('ROI:        {:.2f}%'.format(100.0 * self.roi))
 
 
 # Create a Stratey
@@ -37,8 +20,8 @@ class TestStrategy(bt.Strategy):
 
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
-        dt = dt or self.datas[0].datetime.date(0)
-        print('%s, %s' % (dt.isoformat(), txt))
+        # dt = dt or self.datas[0].datetime.date(0)
+        # print('%s, %s' % (dt.isoformat(), txt))
 
     def start(self):
         self.val_start = self.broker.get_cash()  # keep the starting cash
@@ -46,7 +29,11 @@ class TestStrategy(bt.Strategy):
     def stop(self):
         # calculate the actual returns
         self.roi = (self.broker.get_value() / self.val_start) - 1.0
-        print('ROI:        {:.2f}%'.format(100.0 * self.roi))
+
+        print('(Slow %2d) (Fast %2d) Ending Value %.2f' %
+              (self.params.slow, self.params.fast, self.broker.getvalue()))
+
+        # print('ROI:        {:.2f}%'.format(100.0 * self.roi))
 
     def __init__(self):
         # Keep a reference to the "close" line in the data[0] dataseries
@@ -108,7 +95,7 @@ class TestStrategy(bt.Strategy):
 
             # Check if we are in the market
         if not self.position:
-            if self.crossover > 0:
+            if self.crossover < 0:
                 # BUY, BUY, BUY!!! (with all possible default parameters)
                 self.log('BUY CREATE, %.2f' % self.dataclose[0])
 
@@ -116,7 +103,7 @@ class TestStrategy(bt.Strategy):
                 self.order = self.buy()
         else:
 
-            if self.crossover < 0:
+            if self.crossover > 0:
                 # SELL, SELL, SELL!!! (with all possible default parameters)
                 self.log('SELL CREATE, %.2f' % self.dataclose[0])
 
@@ -124,16 +111,16 @@ class TestStrategy(bt.Strategy):
                 self.order = self.sell()
 
 
-def runStrategy(strategy):
+if __name__ == '__main__':
     # Create a cerebro entity
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(strategy)
-
+    # cerebro.optstrategy(TestStrategy, fast=range(10, 30), slow=range(30, 100))
+    cerebro.addstrategy(TestStrategy)
     # Create a Data Feed
     start = datetime.datetime.now() - relativedelta(years=1)
-    df = web.DataReader("AMZN", "yahoo", start)
+    df = web.DataReader("AAPL", "yahoo", start)
     data = bt.feeds.PandasData(dataname=df)
 
     # Add the Data Feed to Cerebro
@@ -142,23 +129,8 @@ def runStrategy(strategy):
     # Set our desired cash start
     cerebro.broker.setcash(10000.0)
     cerebro.addsizer(bt.sizers.FixedSize, stake=1)
-
-    # 0.1% ... divide by 100 to remove the %
     cerebro.broker.setcommission(commission=0.001)
 
-    # Print out the starting conditions
-    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
-
     # Run over everything
-    cerebro.run()
-    # cerebro.plot()
-
-    # Print out the final result
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
-
-    return cerebro
-
-
-if __name__ == '__main__':
-    runStrategy(TestStrategy)
-    runStrategy(BuyAndHold)
+    cerebro.run(maxcpus=4)
+    cerebro.plot()

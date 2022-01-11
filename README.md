@@ -1,1 +1,3 @@
 # tradebot-py
+
+where lambo?
