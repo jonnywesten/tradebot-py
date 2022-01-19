@@ -23,7 +23,7 @@ if __name__ == '__main__':
         cerebro.adddata(data, name=s)
 
     # Add a strategy
-    cerebro.optstrategy(MaCrossStrategy, fast=range(10, 30), slow=range(30, 100))
+    cerebro.optstrategy(MaCrossMultiple, fast=range(10, 30), slow=range(30, 100))
 
     # Set our desired cash start
     cerebro.broker.setcash(10000.0)
