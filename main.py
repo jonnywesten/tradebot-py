@@ -1,164 +1,50 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-import datetime  # For datetime objects
-import os.path  # To manage paths
-import sys  # To find out the script name (in argv[0])
+import datetime as dt  # For datetime objects
 import pandas_datareader.data as web
 from dateutil.relativedelta import relativedelta
-import matplotlib.pyplot as plt
 import matplotlib
 import backtrader as bt
 
+from analyzers.tradeAnalyzer import printTradeAnalysis
+
 matplotlib.use('TkAgg')
-
-
-class BuyAndHold(bt.Strategy):
-    def start(self):
-        self.val_start = self.broker.get_cash()  # keep the starting cash
-
-    def nextstart(self):
-        # Buy all the available cash
-        size = int(self.broker.get_cash() / self.data)
-        self.buy(size=size)
-
-    def stop(self):
-        # calculate the actual returns
-        self.roi = (self.broker.get_value() / self.val_start) - 1.0
-        print('ROI:        {:.2f}%'.format(100.0 * self.roi))
-
-
-# Create a Stratey
-class TestStrategy(bt.Strategy):
-    params = (
-        ('fast', 15),
-        ('slow', 30),
-    )
-
-    def log(self, txt, dt=None):
-        ''' Logging function fot this strategy'''
-        dt = dt or self.datas[0].datetime.date(0)
-        print('%s, %s' % (dt.isoformat(), txt))
-
-    def start(self):
-        self.val_start = self.broker.get_cash()  # keep the starting cash
-
-    def stop(self):
-        # calculate the actual returns
-        self.roi = (self.broker.get_value() / self.val_start) - 1.0
-        print('ROI:        {:.2f}%'.format(100.0 * self.roi))
-
-    def __init__(self):
-        # Keep a reference to the "close" line in the data[0] dataseries
-        self.dataclose = self.datas[0].close
-
-        # To keep track of pending orders and buy price/commission
-        self.order = None
-        self.buyprice = None
-        self.buycomm = None
-
-        sma1 = bt.ind.SMA(period=self.p.fast)  # fast moving average
-        sma2 = bt.ind.SMA(period=self.p.slow)  # slow moving average
-        self.crossover = bt.ind.CrossOver(sma1, sma2)  # crossover signal
-
-    def notify_order(self, order):
-        if order.status in [order.Submitted, order.Accepted]:
-            # Buy/Sell order submitted/accepted to/by broker - Nothing to do
-            return
-
-        # Check if an order has been completed
-        # Attention: broker could reject order if not enough cash
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.log(
-                    'BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                    (order.executed.price,
-                     order.executed.value,
-                     order.executed.comm))
-
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-            else:  # Sell
-                self.log('SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                         (order.executed.price,
-                          order.executed.value,
-                          order.executed.comm))
-
-            self.bar_executed = len(self)
-
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log('Order Canceled/Margin/Rejected')
-
-        self.order = None
-
-    def notify_trade(self, trade):
-        if not trade.isclosed:
-            return
-
-        self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
-                 (trade.pnl, trade.pnlcomm))
-
-    def next(self):
-        # Simply log the closing price of the series from the reference
-        self.log('Close, %.2f' % self.dataclose[0])
-
-        # Check if an order is pending ... if yes, we cannot send a 2nd one
-        if self.order:
-            return
-
-            # Check if we are in the market
-        if not self.position:
-            if self.crossover > 0:
-                # BUY, BUY, BUY!!! (with all possible default parameters)
-                self.log('BUY CREATE, %.2f' % self.dataclose[0])
-
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.buy()
-        else:
-
-            if self.crossover < 0:
-                # SELL, SELL, SELL!!! (with all possible default parameters)
-                self.log('SELL CREATE, %.2f' % self.dataclose[0])
-
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.sell()
+from strategies.BuyAndHoldMultiple import BuyAndHoldMultiple
+from strategies.MaCrossMultiple import MaCrossMultiple
 
 
 def runStrategy(strategy):
-    # Create a cerebro entity
     cerebro = bt.Cerebro()
-
-    # Add a strategy
     cerebro.addstrategy(strategy)
 
-    # Create a Data Feed
-    start = datetime.datetime.now() - relativedelta(years=1)
-    df = web.DataReader("AMZN", "yahoo", start)
-    data = bt.feeds.PandasData(dataname=df)
+    start = dt.datetime.now() - relativedelta(years=4)
+    end = dt.datetime.now() - relativedelta(years=3)
 
-    # Add the Data Feed to Cerebro
-    cerebro.adddata(data)
+    stocks = ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOG']
 
-    # Set our desired cash start
-    cerebro.broker.setcash(10000.0)
+    for s in stocks:
+        df = web.DataReader(s, "yahoo", start, end)
+        data = bt.feeds.PandasData(dataname=df)
+        cerebro.adddata(data, name=s)
+
+    cerebro.broker.setcash(100000.0)
     cerebro.addsizer(bt.sizers.FixedSize, stake=1)
-
-    # 0.1% ... divide by 100 to remove the %
     cerebro.broker.setcommission(commission=0.001)
 
-    # Print out the starting conditions
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-    # Run over everything
-    cerebro.run()
-    # cerebro.plot()
+    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
+    back = cerebro.run()
+    printTradeAnalysis(back[0].analyzers.ta.get_analysis())
 
-    # Print out the final result
+    cerebro.plot()
+
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-    return cerebro
+    return back
 
 
 if __name__ == '__main__':
-    runStrategy(TestStrategy)
-    runStrategy(BuyAndHold)
+    runStrategy(MaCrossMultiple)
+    # runStrategy(BuyAndHoldMultiple)
