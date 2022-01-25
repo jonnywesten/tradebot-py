@@ -40,7 +40,7 @@ class ClenowTrendFollowingStrategy(BaseStrategy):
         ('slow_donchian_channel_period', 50),
         ('trailing_stop_atr_period', 100),
         ('trailing_stop_atr_count', 3),
-        ('risk_factor', 0.002)
+        ('risk_factor', 0.05)
     )
 
     def __init__(self):

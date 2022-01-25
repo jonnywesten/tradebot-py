@@ -1,4 +1,5 @@
 import backtrader as bt
+from pprint import pprint
 
 
 class BaseStrategy(bt.Strategy):
@@ -51,3 +52,14 @@ class BaseStrategy(bt.Strategy):
 
         self.log(trade.data._name + ': OPERATION PROFIT, GROSS %.2f, NET %.2f' %
                  (trade.pnl, trade.pnlcomm))
+
+
+class BaseForOptimzeStrategy(BaseStrategy):
+
+    def log(self, txt, dt=None):
+        pass
+
+    def stop(self):
+        self.roi = (self.broker.get_value() / self.val_start) - 1.0
+        pprint(vars(self.params))
+        print('ROI:        {:.2f}%'.format(100.0 * self.roi))

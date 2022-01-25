@@ -1,8 +1,9 @@
 import backtrader as bt
+from strategies.Base import BaseForOptimzeStrategy
 from strategies.Base import BaseStrategy
 
 
-class MaCrossMultiple(BaseStrategy):
+class MaCrossMultiple(BaseForOptimzeStrategy):
     params = (
         ('fast', 15),
         ('slow', 30)
