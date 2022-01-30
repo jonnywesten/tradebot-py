@@ -29,19 +29,17 @@ class RankingPosition(bt.indicators.PeriodN):
 
     def calculate_position(self):
         self.lines.pos[0] = 4
-
-        print(self.i)
-        # only look at data that we can have indicators for
-        for i, d in enumerate(self.params.datas):
+        for d in self.params.datas:
             try:
-                print(self.params.inds[d]["dtm"][i])
+                print(self.i)
+                print(d._name)
+                print(self.params.inds[d]["dtm"][self.i])
+                print("--------------------------------")
             except IndexError:
-                print("error for index " + str(i))
+                print("error for index " + str(self.i))
 
         self.rankings = list(filter(lambda d: len(d) > 1, self.params.datas))
         self.rankings.sort(key=lambda d: self.params.inds[d]["dtm"][0])
-        for i, d in enumerate(self.rankings):
-            print(d._name)
 
 
 class AxelStrategy(BaseStrategy):
@@ -52,12 +50,12 @@ class AxelStrategy(BaseStrategy):
 
     def __init__(self):
         self.inds = dict()
-        for i, d in enumerate(self.datas):
+        for d in self.datas:
             self.inds[d] = dict()
             self.inds[d]["sma"] = bt.indicators.SimpleMovingAverage(d.close, period=self.params.maperiod)
             self.inds[d]["dtm"] = DistanceToMA(d)
 
-        for i, d in enumerate(self.datas):
+        for d in self.datas:
             self.inds[d]["pos"] = RankingPosition(d, days=self.params.days, datas=self.datas, inds=self.inds)
 
     def next(self):
