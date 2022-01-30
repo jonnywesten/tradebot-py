@@ -13,6 +13,7 @@ from analyzers.tradeAnalyzer import printTradeAnalysis
 
 matplotlib.use('TkAgg')
 from strategies.BuyAndHoldMultiple import BuyAndHoldMultiple
+from strategies.Axel import AxelStrategy
 from strategies.BuyAndHold import BuyAndHold
 from strategies.MaCrossMultiple import MaCrossMultiple
 from strategies.TrendFollowing import ClenowTrendFollowingStrategy
@@ -28,28 +29,19 @@ def runStrategy500(strategy):
 
     folderName = 'data/' + dt.datetime.today().strftime('%Y-%m-%d')
 
-    for filename in os.listdir(folderName):
+    stocks = os.listdir(folderName)[:3]
+
+    for filename in stocks:
         f = os.path.join(folderName, filename)
-        data = bt.feeds.GenericCSVData(
-            dataname=f,
-            fromdate=dt.datetime.now() - relativedelta(years=5),
-            todate=dt.datetime.now() - relativedelta(years=0),
-            nullvalue=0.0,
-            dtformat=('%Y-%m-%d'),
-            datetime=0,
-            high=1,
-            low=2,
-            open=3,
-            close=4,
-            volume=5,
-            openinterest=-1,
-            plot=False
-        )
+        df = pandas.read_csv(f, parse_dates=True, delimiter=",")
+        df['Date'] = pd.to_datetime(df['Date'])
+        df.set_index('Date', inplace=True)
+        data = bt.feeds.PandasData(dataname=df, plot=True)
         cerebro.adddata(data, name=filename)
 
-    INITIAL_CASH = 1000000
+    INITIAL_CASH = 10000
     cerebro.broker.setcash(INITIAL_CASH)
-    cerebro.addsizer(bt.sizers.FixedSize, stake=1)
+    cerebro.addsizer(bt.sizers.PercentSizer, percents=100 / len(stocks))
     cerebro.broker.setcommission(commission=0.001)
 
     cerebro.addobserver(bt.observers.Value)
@@ -73,7 +65,7 @@ def runStrategy500(strategy):
     print('Max Drawdown: %.2f%%' % results[0].analyzers.drawdown.get_analysis().max.drawdown)
     # print('Buy and Hold: {0:.2f}%'.format(list(results[0].analyzers.buyandhold.get_analysis().values())[0] * 100))
 
-    cerebro.plot()
+    cerebro.plot(style='candlestick')
 
     return cerebro
 
@@ -102,6 +94,6 @@ def runStrategySingle(strategy, plot=True):
 
 
 if __name__ == '__main__':
-    runStrategy500(BuyAndHoldMultiple)
+    runStrategy500(AxelStrategy)
     # runStrategySingle(BuyAndHold, plot=False)
     # runStrategySingle(RSICCI)
