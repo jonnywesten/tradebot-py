@@ -28,24 +28,24 @@ class RankingPosition(bt.indicators.PeriodN):
         self.i += 1
 
     def calculate_position(self):
-        self.lines.pos[0] = 4
+        orderList = []
         for d in self.params.datas:
             try:
-                print(self.i)
-                print(d._name)
-                print(self.params.inds[d]["dtm"][self.i])
-                print("--------------------------------")
+                orderList.append([d._name, self.params.inds[d]["dtm"][self.i]])
             except IndexError:
-                print("error for index " + str(self.i))
+                pass
 
-        self.rankings = list(filter(lambda d: len(d) > 1, self.params.datas))
-        self.rankings.sort(key=lambda d: self.params.inds[d]["dtm"][0])
+        def takeSecond(elem):
+            return elem[1]
+
+        orderList.sort(key=takeSecond)
+        self.l.pos[0] = [item[0] for item in orderList].index(self.data._name)
 
 
 class AxelStrategy(BaseStrategy):
     params = (
         ('maperiod', 50),
-        ('days', 30)
+        ('days', 15)
     )
 
     def __init__(self):
@@ -59,7 +59,13 @@ class AxelStrategy(BaseStrategy):
             self.inds[d]["pos"] = RankingPosition(d, days=self.params.days, datas=self.datas, inds=self.inds)
 
     def next(self):
-        pass
+        for d in self.datas:
+            if d.lines[0]._idx > -1 and not self.getposition(d).size and \
+                    self.inds[d]["pos"][0] > self.inds[d]["pos"][-1] and \
+                    self.inds[d]["pos"][0] > len(self.datas) / 4 - math.floor(len(self.datas) / 4):
+                self.buy(data=d)
+                self.sell(data=d, exectype=bt.Order.StopTrail,
+                          trailpercent=0.2)  # last price will be used as reference
 
     def prenext(self):
         # call next() even when data is not available for all tickers

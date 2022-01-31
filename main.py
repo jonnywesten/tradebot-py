@@ -29,7 +29,7 @@ def runStrategy500(strategy):
 
     folderName = 'data/' + dt.datetime.today().strftime('%Y-%m-%d')
 
-    stocks = os.listdir(folderName)[:3]
+    stocks = os.listdir(folderName)[:5]
 
     for filename in stocks:
         f = os.path.join(folderName, filename)
@@ -65,7 +65,7 @@ def runStrategy500(strategy):
     print('Max Drawdown: %.2f%%' % results[0].analyzers.drawdown.get_analysis().max.drawdown)
     # print('Buy and Hold: {0:.2f}%'.format(list(results[0].analyzers.buyandhold.get_analysis().values())[0] * 100))
 
-    cerebro.plot(style='candlestick')
+    cerebro.plot()
 
     return cerebro
 
@@ -95,5 +95,4 @@ def runStrategySingle(strategy, plot=True):
 
 if __name__ == '__main__':
     runStrategy500(AxelStrategy)
-    # runStrategySingle(BuyAndHold, plot=False)
-    # runStrategySingle(RSICCI)
+    # runStrategy500(BuyAndHoldMultiple)

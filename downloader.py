@@ -10,8 +10,8 @@ def downloadSPY():
     folderName = 'data/' + dt.datetime.today().strftime('%Y-%m-%d')
     os.makedirs(folderName, exist_ok=True)
 
-    start = dt.datetime.now() - relativedelta(years=5)
-    end = dt.datetime.now() - relativedelta(years=0)
+    start = dt.datetime.now() - relativedelta(years=7)
+    end = dt.datetime.now() - relativedelta(years=5)
 
     payload = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
 

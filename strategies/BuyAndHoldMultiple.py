@@ -4,7 +4,7 @@ import math
 
 class BuyAndHoldMultiple(BaseStrategy):
     def next(self):
-        for i, d in enumerate(self.datas):
+        for d in self.datas:
             if d.lines[0]._idx > -1 and not self.getposition(d).size:
                 self.buy(data=d)
 
