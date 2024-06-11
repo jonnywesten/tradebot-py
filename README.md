@@ -1,7 +1,7 @@
 
 # tradebot-py
 
-Welcome to my tradebot repository! This project contains the source code for a Python-based trading bot. I had a lot of fun creating this project, and I hope you find it interesting and useful.
+Welcome to my Python-based backtesting project.
 
 ## Table of Contents
 - [About](#about)
@@ -11,7 +11,7 @@ Welcome to my tradebot repository! This project contains the source code for a P
 - [License](#license)
 
 ## About
-This is my Python trading bot project. It features various trading strategies and analyzers to help automate trading processes. Creating this bot was both challenging and exciting, and I'm thrilled to share it with the community.
+This is my Python trading bot project. It features various trading strategies and analyzers to help automate trading processes.
 
 ## Installation
 To install and run this project locally, follow these steps:
