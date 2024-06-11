@@ -1,17 +1,13 @@
 
 # tradebot-py
 
-Welcome to my Python-based backtesting project.
+Welcome to my Python-based backtesting project. It features various trading strategies and analyzers to help automate trading processes.
 
 ## Table of Contents
-- [About](#about)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
-
-## About
-This is my Python trading bot project. It features various trading strategies and analyzers to help automate trading processes.
 
 ## Installation
 To install and run this project locally, follow these steps:
